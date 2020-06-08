@@ -118,7 +118,7 @@ class CarouselContainer {
             case "togglingThumbnail":
                     console.log(this.thumbnailVisibile)
                     if (this.thumbnailVisibile) {
-                        setStyle(this.thumbnails.el, {"max-height":"0px", transition:"all 1s ease-in-out 1s"})
+                        setStyle(this.thumbnails.el, {"max-height":"0px", transition:"all 1s ease-in-out"})
                     }
                     else {
                         setStyle(this.thumbnails.el, {"max-height":"500px", transition:"all 1s ease-in-out"})
