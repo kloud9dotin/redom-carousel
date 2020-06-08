@@ -63,7 +63,7 @@ class CarouselContainer {
         this.currentItem = 0
         this.thumbnailVisibile = false
         this.slides = new CarouselSlides(this.items[0])
-        this.totalSlide = el("div.w-100", {style:"overflow-x:hidden", onclick:function(e) {
+        this.totalSlide = el("div.w-100.flex-grow", {style:"overflow-x:hidden", onclick:function(e) {
             let width = this.slides.el.getBoundingClientRect().width
             if (e.clientX < width *0.25 ) {
                 this.onChildEvent("prevItem")
@@ -78,9 +78,9 @@ class CarouselContainer {
         }.bind(this)}, this.slides)
         this.thumbnails = new Carouselthumbnails(this.isVertical,this.onChildEvent.bind(this))
         setStyle(this.thumbnails.el, {order:(this.isThumnailFirst ? -1:1)})
-        this.el = el("div.w-100.h-100.flex" + (this.isVertical ? ".flex-column": ""), {style:"overflow-x:hidden"}, this.totalSlide, this.thumbnails)
+        this.el = el("div.w-100.flex" + (this.isVertical ? ".flex-column": ""), {style:"overflow-x:hidden"}, this.totalSlide, this.thumbnails)
         this.thumbnails.update(this.items)
-        setStyle(this.thumbnails.el, {"max-height":"0px", transition:"all 1s ease-in-out 1s"})
+        setStyle(this.thumbnails.el, {"max-height":"0px", transition:"all 1s ease-in-out"})
     }
     onChildEvent(type, data) {
         switch(type) {
@@ -112,16 +112,16 @@ class CarouselContainer {
                     this.slides.update(this.items[data], "left")
                 }
                 this.currentItem = data
-                setStyle(this.thumbnails.el, {"max-height":"0px"})
+                setStyle(this.thumbnails.el, {"max-height":"0px", transition:"all 1s ease-in-out 1s"})
                 this.thumbnailVisibile = !this.thumbnailVisibile
                 break
             case "togglingThumbnail":
                     console.log(this.thumbnailVisibile)
                     if (this.thumbnailVisibile) {
-                        setStyle(this.thumbnails.el, {"max-height":"0px"})
+                        setStyle(this.thumbnails.el, {"max-height":"0px", transition:"all 1s ease-in-out 1s"})
                     }
                     else {
-                        setStyle(this.thumbnails.el, {"max-height":"500px"})
+                        setStyle(this.thumbnails.el, {"max-height":"500px", transition:"all 1s ease-in-out"})
                     }
                     this.thumbnailVisibile = !this.thumbnailVisibile
                 break
