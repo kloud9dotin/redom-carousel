@@ -36,32 +36,41 @@ class Thumbnail {
         this.notifyParent = initData[0]
         this.index = null
         this.el = el("img.h3.pa1", {onclick: function() {
-            this.notifyParent("moveToItem",this.index)
+            console.log(this.notifyParent)
+            this.notifyParent(this.index)
         }.bind(this)})
     }
-    update(data, index) {
+    update(data, index, items,context) {
         this.index = index
         this.el.src = data
+        if (context.currentIndex == this.index) setStyle(this.el, {border:"2px solid red"})
+        else setStyle(this.el, {border:"none"})
     }
 }
 
 class Carouselthumbnails {
     constructor(isVertical, notifyParent) {
-        this.el = list(el("div.flex" + (isVertical ? ".w-100":".w10.flex-column"),{ style:"overflow-x:scroll"}), Thumbnail, null, [notifyParent])
+        this.notifyParent = notifyParent
+        this.el = list(el("div.flex" + (isVertical ? ".w-100":".w10.flex-column"),{ style:"overflow-x:scroll"}), Thumbnail, null, [this.onChildEvent.bind(this)])
     }
-    update(data) {
-        this.el.update(data)
+    update(data, currentIndex) {
+        this.el.update(data, {currentIndex: currentIndex})
+    }
+    onChildEvent(index) {
+        this.notifyParent("moveToItem",index)
     }
 }
 
 class CarouselContainer {
-    constructor(isVertical, isThumnailFirst,items) {
-        this.isVertical = isVertical
-        this.isThumnailFirst = isThumnailFirst
-        this.items = items
-        this.length = items.length
+    constructor(options) {
+        this.isVertical = options.isVertical
+        this.isThumnailFirst = options.isThumnailFirst
+        this.items = options.items
+        this.length = this.items.length
+        this.autoPlayPeriod = options.autoPlayPeriod || 5000
         this.currentItem = 0
         this.thumbnailVisibile = false
+        this.lastUpdateTime = (new Date()).getTime()
         this.slides = new CarouselSlides(this.items[0])
         this.totalSlide = el("div.w-100.flex-grow", {style:"overflow-x:hidden", onclick:function(e) {
             let width = this.slides.el.getBoundingClientRect().width
@@ -79,10 +88,20 @@ class CarouselContainer {
         this.thumbnails = new Carouselthumbnails(this.isVertical,this.onChildEvent.bind(this))
         setStyle(this.thumbnails.el, {order:(this.isThumnailFirst ? -1:1)})
         this.el = el("div.w-100.flex" + (this.isVertical ? ".flex-column": ""), {style:"overflow-x:hidden"}, this.totalSlide, this.thumbnails)
-        this.thumbnails.update(this.items)
-        setStyle(this.thumbnails.el, {"max-height":"0px", transition:"all 1s ease-in-out"})
+        this.thumbnails.update(this.items, this.currentItem)
+        this.isVertical ? setStyle(this.thumbnails.el, {"max-height":"0px", transition:"all 1s ease-in-out"}) : setStyle(this.thumbnails.el, {"max-width":"0px", transition:"all 1s ease-in-out"})
+        this.autoPlay = function() {
+            if(new Date().getTime() -this.lastUpdateTime > this.autoPlayPeriod ) {
+                this.onChildEvent("nextItem")
+                if (this.thumbnailVisibile) this.thumbnails.update(this.items, this.currentItem)
+                this.lastUpdateTime = new Date().getTime()
+            }
+            requestAnimationFrame(this.autoPlay)
+        }.bind(this)
+        requestAnimationFrame(this.autoPlay)
     }
     onChildEvent(type, data) {
+        this.lastUpdateTime = new Date().getTime()
         switch(type) {
             case "nextItem":
                 if (this.currentItem == this.length - 1) {
@@ -112,16 +131,17 @@ class CarouselContainer {
                     this.slides.update(this.items[data], "left")
                 }
                 this.currentItem = data
-                setStyle(this.thumbnails.el, {"max-height":"0px", transition:"all 1s ease-in-out 1s"})
+                this.isVertical ? setStyle(this.thumbnails.el, {"max-height":"0px", transition:"all 1s ease-in-out 1s"}) : setStyle(this.thumbnails.el, {"max-width":"0px", transition:"all 1s ease-in-out 1s"})
                 this.thumbnailVisibile = !this.thumbnailVisibile
                 break
             case "togglingThumbnail":
                     console.log(this.thumbnailVisibile)
                     if (this.thumbnailVisibile) {
-                        setStyle(this.thumbnails.el, {"max-height":"0px", transition:"all 1s ease-in-out"})
+                        this.isVertical ? setStyle(this.thumbnails.el, {"max-height":"0px", transition:"all 1s ease-in-out"}) : setStyle(this.thumbnails.el, {"max-width":"0px", transition:"all 1s ease-in-out"})
                     }
                     else {
-                        setStyle(this.thumbnails.el, {"max-height":"500px", transition:"all 1s ease-in-out"})
+                        this.isVertical ? setStyle(this.thumbnails.el, {"max-height":"500px", transition:"all 1s ease-in-out"}) : setStyle(this.thumbnails.el, {"max-width":"5000px", transition:"all 1s ease-in-out"})
+                        this.thumbnails.update(this.items, this.currentItem)
                     }
                     this.thumbnailVisibile = !this.thumbnailVisibile
                 break
@@ -130,7 +150,11 @@ class CarouselContainer {
     }
 }
 
-let carousel = new CarouselContainer(true, true, ["img1.jpeg","img2.jpeg","img3.jpeg","img2.jpeg","img3.jpeg","img2.jpeg","img3.jpeg","img2.jpeg","img3.jpeg","img2.jpeg","img3.jpeg","img2.jpeg","img3.jpeg"])
+let options = { isVertical: true,
+                isThumnailFirst: true,
+                autoPlayPeriod: 5000,
+                items:["img1.jpeg","img2.jpeg","img3.jpeg","img2.jpeg","img3.jpeg","img2.jpeg","img3.jpeg","img2.jpeg","img3.jpeg","img2.jpeg","img3.jpeg","img2.jpeg","img3.jpeg"]}
+let carousel = new CarouselContainer(options)
 mount(document.body, carousel)
 
 setStyle(document.body, {margin: 0, padding: 0, width:"100%", height: "100%", "box-sizing": "border-box", "overflow-x": "hidden"})
