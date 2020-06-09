@@ -36,7 +36,6 @@ class Thumbnail {
         this.notifyParent = initData[0]
         this.index = null
         this.el = el("img.h3.pa1", {onclick: function() {
-            console.log(this.notifyParent)
             this.notifyParent(this.index)
         }.bind(this)})
     }
@@ -49,9 +48,9 @@ class Thumbnail {
 }
 
 class Carouselthumbnails {
-    constructor(isVertical, notifyParent) {
+    constructor(isVertical, isThumnailFirst,notifyParent) {
         this.notifyParent = notifyParent
-        this.el = list(el("div.flex" + (isVertical ? ".w-100":".w10.flex-column"),{ style:"overflow-x:scroll"}), Thumbnail, null, [this.onChildEvent.bind(this)])
+        this.el = list(el("div.flex.absolute.z-5" + (isVertical ? ".w-100" + (isThumnailFirst ? ".top-0" : ".bottom-0") :".w10.flex-column"+ (isThumnailFirst ? ".left-0" : ".right-0")),{ style:"overflow-x:scroll;background:#202027;"}), Thumbnail, null, [this.onChildEvent.bind(this)])
     }
     update(data, currentIndex) {
         this.el.update(data, {currentIndex: currentIndex})
@@ -85,11 +84,10 @@ class CarouselContainer {
             }
             return
         }.bind(this)}, this.slides)
-        this.thumbnails = new Carouselthumbnails(this.isVertical,this.onChildEvent.bind(this))
-        setStyle(this.thumbnails.el, {order:(this.isThumnailFirst ? -1:1)})
-        this.el = el("div.w-100.flex" + (this.isVertical ? ".flex-column": ""), {style:"overflow-x:hidden"}, this.totalSlide, this.thumbnails)
+        this.thumbnails = new Carouselthumbnails(this.isVertical, this.isThumnailFirst, this.onChildEvent.bind(this))
+        this.el = el("div.w-100.flex.relative" + (this.isVertical ? ".flex-column": ""), {style:"overflow-x:hidden"}, this.totalSlide, this.thumbnails)
         this.thumbnails.update(this.items, this.currentItem)
-        this.isVertical ? setStyle(this.thumbnails.el, {"max-height":"0px", transition:"all 1s ease-in-out"}) : setStyle(this.thumbnails.el, {"max-width":"0px", transition:"all 1s ease-in-out"})
+        this.isVertical ? setStyle(this.thumbnails.el, {"max-height":"0px", transition:"max-height 1s ease-in-out"}) : setStyle(this.thumbnails.el, {"max-width":"0px", transition:"max-width 1s ease-in-out"})
         this.autoPlay = function() {
             if(new Date().getTime() -this.lastUpdateTime > this.autoPlayPeriod ) {
                 this.onChildEvent("nextItem")
@@ -99,6 +97,7 @@ class CarouselContainer {
             requestAnimationFrame(this.autoPlay)
         }.bind(this)
         requestAnimationFrame(this.autoPlay)
+        new ResizeObserver(function() {if(!this.isVertical) setStyle(this.thumbnails, {height: this.totalSlide.getBoundingClientRect().height + "px"})}.bind(this)).observe(this.totalSlide)
     }
     onChildEvent(type, data) {
         this.lastUpdateTime = new Date().getTime()
@@ -131,17 +130,17 @@ class CarouselContainer {
                     this.slides.update(this.items[data], "left")
                 }
                 this.currentItem = data
-                this.isVertical ? setStyle(this.thumbnails.el, {"max-height":"0px", transition:"all 1s ease-in-out 1s"}) : setStyle(this.thumbnails.el, {"max-width":"0px", transition:"all 1s ease-in-out 1s"})
+                this.isVertical ? setStyle(this.thumbnails.el, {"max-height":"0px", transition:"max-height 1s ease-in-out 1s"}) : setStyle(this.thumbnails.el, {"max-width":"0px", transition:"max-width 1s ease-in-out 1s"})
                 this.thumbnailVisibile = !this.thumbnailVisibile
                 break
             case "togglingThumbnail":
-                    console.log(this.thumbnailVisibile)
                     if (this.thumbnailVisibile) {
-                        this.isVertical ? setStyle(this.thumbnails.el, {"max-height":"0px", transition:"all 1s ease-in-out"}) : setStyle(this.thumbnails.el, {"max-width":"0px", transition:"all 1s ease-in-out"})
+                        this.isVertical ? setStyle(this.thumbnails.el, {"max-height":"0px", transition:"max-height 1s ease-in-out"}) : setStyle(this.thumbnails.el, {"max-width":"0px", transition:"max-width 1s ease-in-out"})
                     }
                     else {
-                        this.isVertical ? setStyle(this.thumbnails.el, {"max-height":"500px", transition:"all 1s ease-in-out"}) : setStyle(this.thumbnails.el, {"max-width":"5000px", transition:"all 1s ease-in-out"})
+                        this.isVertical ? setStyle(this.thumbnails.el, {"max-height":"500px", transition:"max-height 1s ease-in-out"}) : setStyle(this.thumbnails.el, {"max-width":"5000px", transition:"max-width 1s ease-in-out"})
                         this.thumbnails.update(this.items, this.currentItem)
+                        if(!this.isVertical) setStyle(this.thumbnails, {height: this.totalSlide.getBoundingClientRect().height + "px"})
                     }
                     this.thumbnailVisibile = !this.thumbnailVisibile
                 break
@@ -150,8 +149,8 @@ class CarouselContainer {
     }
 }
 
-let options = { isVertical: true,
-                isThumnailFirst: true,
+let options = { isVertical: Math.random() > 0.5,
+                isThumnailFirst: Math.random() > 0.5,
                 autoPlayPeriod: 5000,
                 items:["img1.jpeg","img2.jpeg","img3.jpeg","img2.jpeg","img3.jpeg","img2.jpeg","img3.jpeg","img2.jpeg","img3.jpeg","img2.jpeg","img3.jpeg","img2.jpeg","img3.jpeg"]}
 let carousel = new CarouselContainer(options)
